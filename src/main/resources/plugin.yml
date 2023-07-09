@@ -1,0 +1,6 @@
+name: PlayTimeLimitPlugin
+version: 1.0
+main: cn.nstarmc.playtimelimitplugin.PlayTimeLimitPlugin
+commands:
+  playtime:
+    description: 查询今天剩余游戏时间
