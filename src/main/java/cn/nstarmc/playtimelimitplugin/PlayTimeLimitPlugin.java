@@ -65,8 +65,11 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
                 UUID uuid = player.getUniqueId();
                 int playTime = data.getInt(uuid.toString());
                 int maxPlayTime = config.getInt("max-play-time");
+                // 从配置文件中读取重置小时和分钟
+                int resetHour = config.getInt("resetHour");
+                int resetMinute = config.getInt("resetMinute");
                 if (playTime >= maxPlayTime) {
-                    player.kickPlayer(ChatColor.RED + "你今天的游戏时间已用完。每日游戏时间限制为" + ChatColor.YELLOW + maxPlayTime + ChatColor.RED + "分钟。\n" + ChatColor.GREEN + "时间重置会在4:00(UTC+8)。");
+                    player.kickPlayer(ChatColor.RED + "你今天的游戏时间已用完。每日游戏时间限制为" + ChatColor.YELLOW + maxPlayTime + ChatColor.RED + "分钟。\n" + ChatColor.GREEN + "时间重置会在" + resetHour + ":" + String.format("%02d", resetMinute) + "(UTC+8)。");
                 } else {
                     int remainingTime = maxPlayTime - playTime;
                     int hours = remainingTime / 60;
@@ -85,10 +88,11 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
                 UUID uuid = player.getUniqueId();
                 int playTime = data.getInt(uuid.toString());
                 int maxPlayTime = config.getInt("max-play-time");
+                // 从配置文件中读取重置小时和分钟
+                int resetHour = config.getInt("resetHour");
+                int resetMinute = config.getInt("resetMinute");
                 if (playTime >= maxPlayTime) {
-                    player.kickPlayer(ChatColor.RED + "你今天的游戏时间已用完。每日游戏时间限制为" + ChatColor.YELLOW + maxPlayTime + ChatColor.RED + "分钟。\n" + ChatColor.GREEN + "时间重置会在4:00(UTC+8)");
-
-
+                    player.kickPlayer(ChatColor.RED + "你今天的游戏时间已用完。每日游戏时间限制为" + ChatColor.YELLOW + maxPlayTime + ChatColor.RED + "分钟。\n" + ChatColor.GREEN + "时间重置会在" + resetHour + ":" + String.format("%02d", resetMinute) + "(UTC+8)。");
                 } else if (maxPlayTime - playTime <= 5) {
                     player.sendMessage(ChatColor.RED + "注意：你今天只剩下" + ChatColor.YELLOW + (maxPlayTime - playTime) + ChatColor.RED + "分钟的游戏时间了。");
                     data.set(uuid.toString(), playTime + 1);
@@ -100,10 +104,14 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
             }
         }, 0L, 1200L);
 
-        // 每天凌晨4点重置游戏时间
+        // 从配置文件中读取重置小时和分钟
+        int resetHour = config.getInt("resetHour");
+        int resetMinute = config.getInt("resetMinute");
+
+        // 计划每分钟运行一次任务
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC+8"));
-            if (now.getHour() == 4 && now.getMinute() == 0) {
+            if (now.getHour() == resetHour && now.getMinute() == resetMinute) {
                 for (String key : data.getKeys(false)) {
                     data.set(key, 0);
                 }

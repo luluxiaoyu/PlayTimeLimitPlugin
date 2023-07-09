@@ -1,2 +1,5 @@
 # 最大游戏时间（单位：分钟）
 max-play-time: 60
+# 每日重置时间
+resetHour: 4
+resetMinute: 0
