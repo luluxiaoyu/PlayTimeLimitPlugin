@@ -7,7 +7,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.event.Listener;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
 
@@ -16,6 +15,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.time.LocalDate;
+
 
 public class PlayTimeLimitPlugin extends JavaPlugin {
     private FileConfiguration config;
@@ -41,7 +42,29 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
         }
         data = YamlConfiguration.loadConfiguration(dataFile);
 
-// 注册命令
+        // 从配置文件中读取重置小时和分钟
+        int resetHour = config.getInt("resetHour");
+        int resetMinute = config.getInt("resetMinute");
+
+        // 检查当前时间是否晚于设定的重置时间
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC+8"));
+        if (now.getHour() > resetHour || (now.getHour() == resetHour && now.getMinute() >= resetMinute)) {
+            // 获取上一次重置的日期
+            String lastResetDate = data.getString("lastResetDate", "2000-01-01");
+            LocalDate lastReset = LocalDate.parse(lastResetDate);
+            if (now.toLocalDate().isAfter(lastReset)) {
+                // 运行重置任务
+                for (String key : data.getKeys(false)) {
+                    data.set(key, 0);
+                }
+                // 更新上一次重置的日期
+                data.set("lastResetDate", now.toLocalDate().toString());
+                saveData();
+                Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "「防沉迷」玩家游戏时间已重置！");
+            }
+        }
+
+        // 注册命令
         getCommand("playtime").setExecutor((sender, command, label, args) -> {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
@@ -57,7 +80,7 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
         });
 
 
-// 注册事件监听器
+        // 注册事件监听器
         getServer().getPluginManager().registerEvents(new Listener() {
             @EventHandler
             public void onPlayerJoin(PlayerJoinEvent event) {
@@ -89,8 +112,8 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
                 int playTime = data.getInt(uuid.toString());
                 int maxPlayTime = config.getInt("max-play-time");
                 // 从配置文件中读取重置小时和分钟
-                int resetHour = config.getInt("resetHour");
-                int resetMinute = config.getInt("resetMinute");
+                //int resetHour = config.getInt("resetHour");
+                //int resetMinute = config.getInt("resetMinute");
                 if (playTime >= maxPlayTime) {
                     player.kickPlayer(ChatColor.RED + "你今天的游戏时间已用完。每日游戏时间限制为" + ChatColor.YELLOW + maxPlayTime + ChatColor.RED + "分钟。\n" + ChatColor.GREEN + "时间重置会在" + resetHour + ":" + String.format("%02d", resetMinute) + "(UTC+8)。");
                 } else if (maxPlayTime - playTime <= 5) {
@@ -105,22 +128,25 @@ public class PlayTimeLimitPlugin extends JavaPlugin {
         }, 0L, 1200L);
 
         // 从配置文件中读取重置小时和分钟
-        int resetHour = config.getInt("resetHour");
-        int resetMinute = config.getInt("resetMinute");
+        //int resetHour = config.getInt("resetHour");
+        //int resetMinute = config.getInt("resetMinute");
 
         // 计划每分钟运行一次任务
         Bukkit.getScheduler().runTaskTimer(this, () -> {
-            LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC+8"));
+            //LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC+8"));
             if (now.getHour() == resetHour && now.getMinute() == resetMinute) {
                 for (String key : data.getKeys(false)) {
                     data.set(key, 0);
                 }
+                // 更新上一次重置的日期
+                data.set("lastResetDate", now.toLocalDate().toString());
                 saveData();
+                Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "「防沉迷」玩家游戏时间已重置（定时）！");
             }
         }, 0L, 1200L);
 
         // 插件加载完成后，在控制台输出绿色文本：“防沉迷插件成功加载！-by luluxiaoyu”
-        Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "防沉迷插件成功加载！-by luluxiaoyu");
+        Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN + "「防沉迷」插件成功加载！-by luluxiaoyu");
     }
 
 
